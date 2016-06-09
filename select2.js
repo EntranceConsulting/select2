@@ -2960,15 +2960,19 @@ the specific language governing permissions and limitations under the Apache Lic
             var ids = [], filtered = [], self = this;
 
             // filter out duplicates
-            $(data).each(function () {
-                if (indexOf(self.id(this), ids) < 0) {
-                    ids.push(self.id(this));
-                    filtered.push(this);
-                }
-            });
-            data = filtered;
+            if (!this.opts.allowDuplicates) {
+                $(data)
+                    .each(function() {
+                        if (indexOf(self.id(this), ids) < 0) {
+                            ids.push(self.id(this));
+                            filtered.push(this);
+                        }
+                    });
+                data = filtered;
+            }
 
             this.selection.find(".select2-search-choice").remove();
+
             $(data).each(function () {
                 self.addSelectedChoice(this);
             });
@@ -3146,14 +3150,16 @@ the specific language governing permissions and limitations under the Apache Lic
                 compound = this.results.find(".select2-result-with-children"),
                 self = this;
 
-            choices.each2(function (i, choice) {
-                var id = self.id(choice.data("select2-data"));
-                if (indexOf(id, val) >= 0) {
-                    choice.addClass("select2-selected");
-                    // mark all children of the selected parent as selected
-                    choice.find(".select2-result-selectable").addClass("select2-selected");
-                }
-            });
+            if (!this.opts.allowDuplicates) {
+                choices.each2(function(i, choice) {
+                    var id = self.id(choice.data("select2-data"));
+                    if (indexOf(id, val) >= 0) {
+                        choice.addClass("select2-selected");
+                        // mark all children of the selected parent as selected
+                        choice.find(".select2-result-selectable").addClass("select2-selected");
+                    }
+                });
+            }
 
             compound.each2(function(i, choice) {
                 // hide an optgroup if it doesn't have any selectable children
@@ -3432,39 +3438,39 @@ the specific language governing permissions and limitations under the Apache Lic
         containerCssClass: "",
         dropdownCssClass: "",
         formatResult: function(result, container, query, escapeMarkup) {
-            var markup=[];
+            var markup = [];
             markMatch(this.text(result), query.term, markup, escapeMarkup);
             return markup.join("");
         },
         transformVal: function(val) {
             return $.trim(val);
         },
-        formatSelection: function (data, container, escapeMarkup) {
+        formatSelection: function(data, container, escapeMarkup) {
             return data ? escapeMarkup(this.text(data)) : undefined;
         },
-        sortResults: function (results, container, query) {
+        sortResults: function(results, container, query) {
             return results;
         },
-        formatResultCssClass: function(data) {return data.css;},
-        formatSelectionCssClass: function(data, container) {return undefined;},
+        formatResultCssClass: function(data) { return data.css; },
+        formatSelectionCssClass: function(data, container) { return undefined; },
         minimumResultsForSearch: 0,
         minimumInputLength: 0,
         maximumInputLength: null,
         maximumSelectionSize: 0,
-        id: function (e) { return e == undefined ? null : e.id; },
-        text: function (e) {
-          if (e && this.data && this.data.text) {
-            if ($.isFunction(this.data.text)) {
-              return this.data.text(e);
+        id: function(e) { return e == undefined ? null : e.id; },
+        text: function(e) {
+            if (e && this.data && this.data.text) {
+                if ($.isFunction(this.data.text)) {
+                    return this.data.text(e);
+                } else {
+                    return e[this.data.text];
+                }
             } else {
-              return e[this.data.text];
+                return e.text;
             }
-          } else {
-            return e.text;
-          }
         },
         matcher: function(term, text) {
-            return stripDiacritics(''+text).toUpperCase().indexOf(stripDiacritics(''+term).toUpperCase()) >= 0;
+            return stripDiacritics('' + text).toUpperCase().indexOf(stripDiacritics('' + term).toUpperCase()) >= 0;
         },
         separator: ",",
         tokenSeparators: [],
@@ -3474,6 +3480,7 @@ the specific language governing permissions and limitations under the Apache Lic
         selectOnBlur: false,
         adaptContainerCssClass: function(c) { return c; },
         adaptDropdownCssClass: function(c) { return null; },
+        allowDuplicates: false,
         nextSearchTerm: function(selectedObject, currentSearchTerm) { return undefined; },
         searchInputPlaceholder: '',
         createSearchChoicePosition: 'top',
